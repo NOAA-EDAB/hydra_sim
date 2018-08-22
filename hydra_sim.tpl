@@ -281,6 +281,14 @@ DATA_SECTION
   init_matrix recShepherd_alpha(1,Nareas,1,Nspecies)			//SSB Shepherd model alpha
   init_matrix recShepherd_shape(1,Nareas,1,Nspecies)			//SSB Shepherd model shape parameter=1.0 not used
   init_matrix recShepherd_beta(1,Nareas,1,Nspecies)			//SSB Shepherd model beta
+
+  init_matrix recHockey_alpha(1,Nareas,1,Nspecies)			//SSB Hockey Stick model alpha
+  init_matrix recHockey_shape(1,Nareas,1,Nspecies)			//SSB Hockey stick  model shape (S*) breakpoint
+  init_matrix recHockey_beta(1,Nareas,1,Nspecies)			//SSB Hockey Stick  model beta parameter=1.0 not used
+
+  init_matrix recSegmented_alpha(1,Nareas,1,Nspecies)			//SSB Segmented regression model alpha
+  init_matrix recSegmented_shape(1,Nareas,1,Nspecies)			//SSB  Segmented regression model shape. use this for the breakpoint
+  init_matrix recSegmented_beta(1,Nareas,1,Nspecies)			//SSB  Segmented regression model beta
 // !! cout << recShepherd_alpha<<endl;
 // !! cout << recShepherd_beta<<endl;
  // !! cout << recShepherd_shape<<endl;
@@ -327,6 +335,16 @@ DATA_SECTION
   !!          rec_alpha(area,spp) = recShepherd_alpha(area,spp);
   !!          rec_shape(area,spp) = recShepherd_shape(area,spp);
   !!          rec_beta(area,spp) = recShepherd_beta(area,spp);
+  !!       break;
+  !!       case 7:                // SSB based rcruitment. hockeyStick
+  !!          rec_alpha(area,spp) = recHockey_alpha(area,spp);
+  !!          rec_shape(area,spp) = recHockey_shape(area,spp);
+  !!          rec_beta(area,spp) = recHockey_beta(area,spp);
+  !!       break;
+  !!       case 8:                // SSB based recruitment,segmented regresion with breakpoint
+  !!          rec_alpha(area,spp) = recSegmented_alpha(area,spp);
+  !!          rec_shape(area,spp) = recSegmented_shape(area,spp);
+  !!          rec_beta(area,spp) = recSegmented_beta(area,spp);
   !!       break;
   !!	   case 9:                   //no functional form, uses average+devs in .pin file
   !!          rec_alpha(area,spp) = 0;
@@ -1276,6 +1294,38 @@ FUNCTION calc_recruitment
                                       recruitment(area,spp)(yrct) *= mfexp(recruitment_covwt(spp) * trans(recruitment_cov)(yrct-1));
 
                  break;
+
+           case 7:  // Hockey Stick Stock recruitment
+			//SSB(area,spp)(yrct) /= Nstepsyr; //average SSB for a single "spawning" timestep, now SSB is at time t
+                        if(SSB(area,spp)(yrct-1) <= recruitment_shape(area,spp)) { // S*
+			               recruitment(area,spp)(yrct) = recruitment_alpha(area,spp) * SSB(area,spp)(yrct-1); // alpha.SSB
+                        }  else {
+			               recruitment(area,spp)(yrct) = recruitment_alpha(area,spp) * recruitment_shape(area,spp); // alpha.SSB*
+                        }
+                                     //"effective recruitment" with env covariates; see Quinn & Deriso 1999 p 92
+                                      recruitment(area,spp)(yrct) *= mfexp(recruitment_covwt(spp) * trans(recruitment_cov)(yrct-1));
+
+                 break;
+
+
+           case 8:  // Segmented Regression with breakpoint
+			//SSB(area,spp)(yrct) /= Nstepsyr; //average SSB for a single "spawning" timestep, now SSB is at time t
+                        if(SSB(area,spp)(yrct-1) <= recruitment_shape(area,spp)) { // breakpoint
+			               recruitment(area,spp)(yrct) = recruitment_alpha(area,spp) * SSB(area,spp)(yrct-1); // alpha.SSB
+                        }  else {
+			               recruitment(area,spp)(yrct) = (recruitment_alpha(area,spp) * SSB(area,spp)(yrct-1)) +
+                                             (recruitment_beta(area,spp) *( SSB(area,spp)(yrct-1)-recruitment_shape(area,spp)) ); // alpha.SSB + beta(ssB-breakpoint)
+                        }
+
+                        // check to see if recruitment goes below zero. which it is possible to do
+                        if ( recruitment(area,spp)(yrct) < 0) {
+                           recruitment(area,spp)(yrct) = 0.0;
+                        }
+                                     //"effective recruitment" with env covariates; see Quinn & Deriso 1999 p 92
+                                      recruitment(area,spp)(yrct) *= mfexp(recruitment_covwt(spp) * trans(recruitment_cov)(yrct-1));
+
+                 break;
+
 
            case 9:                   //Average recruitment plus devs--giving up on functional form
                        recruitment(area,spp)(yrct) = mfexp(avg_recruitment(area,spp)+recruitment_devs(area,spp,yrct));
