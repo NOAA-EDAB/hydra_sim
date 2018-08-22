@@ -374,18 +374,29 @@ DATA_SECTION
 
   init_number phimax
   4darray growthprob_phi(1,Nareas,1,Nspecies,1,Nyrs,1,Nsizebins)
+  vector delta_t(1,Nsizebins)
   !!  for (area=1; area<=Nareas; area++){
   !!	for(spp=1; spp<=Nspecies; spp++){
   !!     for(yr=1; yr<=Nyrs; yr++){
   !!      switch (growthtype (spp)){
   !!        case 1:	  	 //exponential no covariates
-  !!    	  growthprob_phi(area, spp, yr) = 1/pow((lbinmax(spp)/growth_psi(area, spp)),
-  !!													(1.0/growth_kappa(area, spp)));
+  !!              // these yimes  of growing out of bin relative to size zero. SGaichas
+  !!    	  delta_t = pow((lbinmax(spp)/growth_psi(area, spp)),(1.0/growth_kappa(area, spp)));
+  !!              // these are "probabilities" of growing into size bin, r given in size bin r-1. ABeet
+  !!              growthprob_phi(area, spp, yr,1) = 1/delta_t(1);
+  !!              for (int isize=2;isize<=Nsizebins; isize++) {
+  !!                growthprob_phi(area, spp, yr, isize) = 1/(delta_t(isize) - delta_t(isize-1));
+  !!              }
   !!        break;
   !!        case 2:       //exponential with covariates
-  !!    	  growthprob_phi(area, spp, yr) = 1/pow((lbinmax(spp)/
-  !!                                     growth_psi(area, spp)* mfexp(growth_covwt(spp)*trans(growth_cov)(yr))),
-  !!													(1.0/growth_kappa(area, spp)));
+  !!              // these "probabilitlies of growing out of bin relative to size zero. SGaichas
+  !!    	  delta_t = pow((lbinmax(spp)/growth_psi(area, spp)* mfexp(growth_covwt(spp)*trans(growth_cov)(yr))),
+  !!	        										(1.0/growth_kappa(area, spp)));
+  !!              // these are "probabilities" of growing into size bin, r given in size bin r-1. ABeet
+  !!              growthprob_phi(area, spp, yr,1) = 1/delta_t(1);
+  !!              for (int isize=2;isize<=Nsizebins; isize++) {
+  !!                growthprob_phi(area, spp, yr, isize) = 1/(delta_t(isize) - delta_t(isize-1));
+  !!              }                                                                                 
   !!        break;
   !!        case 3:       //VonB no covariates
   !!          growthprob_phi(area, spp, yr) = vonB_k(area, spp)/log(
@@ -405,14 +416,10 @@ DATA_SECTION
   !!      double tempmax =  max(growthprob_phi(area, spp, yr));
   !!      phimax = max(tempmax,phimax);
   !!	  }
-//  !!  cout<<lbinmax(spp)<<endl;
-  !!  cout<<spp<<"," << growthprob_phi(area,spp,1)<<endl;
   !!	}
   !!    growthprob_phi(area) /= phimax;  //rescale so no group has >1 prob growing out
-  !! cout<< growthprob_phi(1,5,1) <<endl;
-  !! cout<< growthprob_phi(1,10,1) <<endl;
   !!  }
-  !! exit(1);
+
   !!//  growthprob_phi /= phimax;   //rescale so no group has >1 prob growing out--not working on 4d array
   !!  Nstepsyr = round(phimax);            //set model timestep to phimax
   !!  Tottimesteps = Nstepsyr*Nyrs;        //for scaling state variable arrays
@@ -871,7 +878,7 @@ PROCEDURE_SECTION
 
                 calc_survey_abundance();  if (debug == 4) {cout<<"completed Survey Abundance"<<endl;}
 
-                calc_health_indices();  if (debug == 4) {cout<<"completed Survey Abundance"<<endl;}
+                //calc_health_indices();  if (debug == 4) {cout<<"completed Survey Abundance"<<endl;}
 
                 // enter assessment module if turned on in data file, if end of year, if curent year is a multiple of assessmentPeriod
                 if (AssessmentOn == 1) {
@@ -1219,6 +1226,7 @@ FUNCTION calc_recruitment
   //recruitment(t) =  recruitment_alpha  * pow (egg production(t-1),recruitment_shape) *
   //              exp(-recruitment_beta * egg production(t-1) +
   //              sumover_?(recruitment_covwt * recruitment_cov(t)))
+ 
   if ((t % Nstepsyr == 1) && (yrct <= Nyrs)) {  // recruits enter at start of year
     for (area=1; area<=Nareas; area++){
   	for(spp=1; spp<=Nspecies; spp++){
@@ -1263,7 +1271,7 @@ FUNCTION calc_recruitment
            case 6:
 			//SSB(area,spp)(yrct) /= Nstepsyr; //average SSB for a single "spawning" timestep, now SSB is at time t
 			recruitment(area,spp)(yrct) = recruitment_alpha(area,spp) * SSB(area,spp)(yrct-1) /
-                                         (1 +  pow( SSB(area,spp)(yrct-1)/recruitment_beta(area,spp),recruitment_shape(area,spp)) );
+                                         (1 +  pow(value( SSB(area,spp)(yrct-1)/recruitment_beta(area,spp)),recruitment_shape(area,spp)) );
                                      //"effective recruitment" with env covariates; see Quinn & Deriso 1999 p 92
                                       recruitment(area,spp)(yrct) *= mfexp(recruitment_covwt(spp) * trans(recruitment_cov)(yrct-1));
 
@@ -1288,12 +1296,13 @@ FUNCTION calc_recruitment
   }  //end if last timestep in year
 
 
+
 //----------------------------------------------------------------------------------------
 FUNCTION calc_pred_mortality
 //----------------------------------------------------------------------------------------
 
   //totalconsumedbypred = allmodeledprey(pred,predsize) + otherprey
-
+ 
   for (area=1; area<=Nareas; area++){
   	for(pred=1; pred<=Nspecies; pred++){
 	    for(prey=1; prey<=Nspecies; prey++){
@@ -1342,7 +1351,7 @@ FUNCTION calc_pred_mortality
 //----------------------------------------------------------------------------------------
 FUNCTION calc_fishing_mortality
 //----------------------------------------------------------------------------------------
- 
+
   //NOTE: Ftots are by area, species, and should be separated by fleet
   //not currently set up that way, assuming each fleet has same Ftot and they sum to F
   //selectivities are not currently by area, assuming fleet selectivity same in each area
@@ -1374,7 +1383,7 @@ FUNCTION calc_fishing_mortality
       }
     }
   }
-
+ 
 //----------------------------------------------------------------------------------------
 FUNCTION calc_total_mortality
 //----------------------------------------------------------------------------------------
@@ -1411,14 +1420,15 @@ FUNCTION calc_catch_etc
       otherDead(area,spp,t) = Ndeadtmp - C(area,spp,t) - eatN(area,spp,t)- discardN(area,spp,t); // M1
 
       // all catch is considered discard since can not be landed if found to be so in assessment.
-      // catchTtoDiscards is a binary vector indicating threshold exceedance
+      // catchTtoDiscards is a binary vector indicating threshold exceedance. Default all = 0
       if (catchToDiscardsSpecies(area,spp) == 1) {
          discardN(area,spp,t) =  discardN(area,spp,t) + C(area,spp,t);
          C(area,spp,t) = 0.0;
       }
 
           
-      // check to see if species part of a guild in trouble. if so set catch to discards and catch(landings) = 0 
+      // check to see if species part of a guild in trouble. if so set catch to discards and catch(landings) = 0
+      //      Default flag:  all = 0
       if (catchToDiscardsGuild(area,guildMembers(spp)) == 1) {
          // this species is a member of a guild whose guild biomass has exceeded threshold
         discardN(area,spp,t) =  discardN(area,spp,t) + C(area,spp,t);
@@ -1730,7 +1740,7 @@ FUNCTION calc_health_indices
       }
 
   } // end of year if
-
+  
 
 
 //----------------------------------------------------------------------------------------
