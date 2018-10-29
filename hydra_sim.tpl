@@ -578,6 +578,7 @@ DATA_SECTION
   3darray sim_survey_error(1,Nareas,1,Nspecies,1,Nyrs) // used to calculate AR process for survey
   3darray sim_recruit_error(1,Nareas,1,Nspecies,1,Nyrs) // used to calculate AR process for recruitment
   4darray sim_catch_error(1,Nareas,1,Nspecies,1,Nfleets,1,Nyrs) // used to calculate AR process for catch
+  3darray sim_extreme_recruit_error(1,Nareas,1,Nspecies,1,Nyrs) // used to calculate errors for extreme event 
 
   init_int flagMSE //flag to determine output created. If MSE = 1, otherwise = 0
  //flag marking end of file for data input
@@ -863,6 +864,8 @@ PARAMETER_SECTION
   matrix exploitationLevelSpecies(1,Nareas,1,Nspecies) // stores adjusted exploitation levels
   matrix exploitationLevelGuild(1,Nareas,1,Nguilds) // stores adjusted exploitation levels
   matrix objfun_areaspp(1,Nareas,1,Nspecies) //sum over components for area and species
+  3darray rec_EventError(1,Nareas,1,Nspecies,1,Nyrs) // error for extreme recruitment event 
+
 
   objective_function_value objfun
 
@@ -1013,6 +1016,7 @@ FUNCTION calc_initial_states
   discard_biomass_size.initialize();
   total_biomass_size.initialize();
   catch_biomass_size.initialize();
+  rec_EventError.initialize();
   //andybeet
   fleet_catch_biomass.initialize(); est_fleet_catch_biomass.initialize();
   catch_biomass.initialize();
@@ -1020,6 +1024,7 @@ FUNCTION calc_initial_states
   index_stdev_biomass.initialize();
   index_status_species.initialize();
   index_status_guild.initialize();
+  
 
 
   totcatch_fit.initialize(); catchcomp_fit.initialize();
@@ -1088,10 +1093,6 @@ FUNCTION calc_initial_states
       }
     }
   }
-
-
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1175,6 +1176,21 @@ FUNCTION calc_initial_states
         }
      }
 
+  // p(extreme event) for recruitment
+    random_number_generator rngRecruits (rseed);
+    dvector recruitEventError(1,Nyrs);
+    for (area=1; area<=Nareas; area++){
+     for (spp=1; spp<=Nspecies; spp++){
+       recruitEventError.fill_randu(rngRecruits);
+       rec_EventError(area,spp) = recruitEventError;
+     }
+    }
+
+    // now given the distribution of errors for extreme events we calculate the error
+    //sim_extreme_recruit_error
+
+   //////////// HERE /////////////////////
+ 
   if (debug == 15){
     cout<<"Ninit\n"<<N<<endl;
     cout<<"propmature\n"<<propmature<<endl;
@@ -1186,7 +1202,6 @@ FUNCTION calc_initial_states
     exit(-1);
   }
   //other covariate sums here too? time series will be input
-
 
 
 //----------------------------------------------------------------------------------------
@@ -1212,9 +1227,18 @@ FUNCTION calc_recruitment
   //              exp(-recruitment_beta * egg production(t-1) +
   //              sumover_?(recruitment_covwt * recruitment_cov(t)))
 
+
   if ((t % Nstepsyr == 1) && (yrct <= Nyrs)) {  // recruits enter at start of year
+    // simulate a vector of size Nspecies from uniform distribution between 0, 1 - probabilities
+    // if prob < threshold then extreme event occurs and we sample from alternative distribution otherwise from ricker, beverton etc
+//    for (spp =1; spp<=Nspecies;spp+) {
+     
+     
+     
     for (area=1; area<=Nareas; area++){
   	for(spp=1; spp<=Nspecies; spp++){
+        
+       
 		switch (rectype(spp)){
           case 1:	  				//egg production based recruitment, 3 par gamma (Ricker-ish)
 			eggprod(area,spp)(yrct-1) /= Nstepsyr; //average egg production for a single "spawning" timestep
@@ -1300,21 +1324,24 @@ FUNCTION calc_recruitment
 		  default:
             exit(1);
 		} //end switch
-        if(stochrec(spp)){                //simulate devs around recruitment curve
 
+            
+        if(stochrec(spp)){                //simulate devs around recruitment curve
          // we allow the option of a "large" recruitment event (larger than under log normal) every so often as recommended by
          // CIE review team (Daniel Howell). We sample a random number from uniform distribution and based on frequency of large event
          // (from literature) determine if event should occur for species. We then sample from a distribution of event magnitudes.
          // NOT YET IMPLEMENTED
 
-         
+          if (rec_EventError(area,spp,yrct) >= 0) { // U~[0,1] to determine an extreme event x% of time
 
-         // assumes log normal error. R = S.exp(Z) where Z = N(-sig2/2, sig2). In expectation R has mean = S. Slightly diff if Z = AR1
-           recruitment(area,spp)(yrct) *=  mfexp(sim_recruit_error(area,spp,yrct));
+           // assumes log normal error. R = S.exp(Z) where Z = N(-sig2/2, sig2). In expectation R has mean = S. Slightly diff if Z = AR1
+             recruitment(area,spp)(yrct) *=  mfexp(sim_recruit_error(area,spp,yrct));
          
-//           recruitment(area,spp)(yrct) *=  mfexp(recsigma(area,spp) * rec_procError(area,spp)(yrct-1)
-//                                                  - 0.5 * recsigma(area,spp) * recsigma(area,spp));
-
+           } else {   // extreme event 
+            //  recruitment(area,spp)(yrct)  = some other transformation depending on error structure (sim_extreme_recruit_error)
+            ///////////  place holder for now ///////////////////
+            recruitment(area,spp)(yrct) *=  mfexp(sim_recruit_error(area,spp,yrct));
+           }          
         }  //end if stochastic
         // Now add recruitment to 1st size class
         N(area,spp,t,1) = N(area,spp,t,1) + recruitment(area,spp,yrct);
@@ -2171,6 +2198,7 @@ FUNCTION write_outIndices
       outIndices<<"Nyrs\n"<<Nyrs<<endl;
       outIndices<<"Nstepsyr\n"<<Nstepsyr<<endl;
       outIndices<<"Nguilds\n"<<Nguilds<<endl;
+      outIndices<<"Nfleets\n"<<Nfleets<<endl;
       outIndices<<"avByr\n"<<avByr<<endl;
       outIndices<<"est_fleet_catch_biomass\n"<<est_fleet_catch_biomass<<endl;
       outIndices<<"est_fleet_catch_guild_biomass\n"<<est_fleet_catch_guild_biomass<<endl;
