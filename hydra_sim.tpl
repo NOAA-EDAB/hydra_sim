@@ -1880,7 +1880,7 @@ FUNCTION calc_assessment_strategy_Linear
    dvariable newExploitationLevel=0;
    for (area=1; area<=Nareas; area++) {
        for (spp = 1; spp<=Nspecies; spp++) {
-           slopeSpecies(area,spp) = ((minMaxExploitation(2)-minMaxExploitation(1))/((minMaxThreshold(2)+threshold_species(spp)) - minMaxThreshold(1)));
+           slopeSpecies(area,spp) = (minMaxExploitation(2)-minMaxExploitation(1))/(minMaxThreshold(2) - minMaxThreshold(1));
            interceptSpecies(area,spp) =  minMaxExploitation(2) - slopeSpecies(area,spp)*(minMaxThreshold(2)+threshold_species(spp));
        }
    }
@@ -1896,7 +1896,7 @@ FUNCTION calc_assessment_strategy_Linear
    }
 
    // guild level calcs
-   // now average the guild biomass values over AssessmentPeriod yrs and then weajjust the exploitation rate
+   // now average the guild biomass values over AssessmentPeriod yrs and then we adjust the exploitation rate
      exploitationLevelGuild.initialize();
      for (area=1 ; area<=Nareas; area++) {
          for (iguild=1; iguild<=Nguilds; iguild++) {
@@ -1926,6 +1926,7 @@ FUNCTION calc_assessment_strategy_Linear
             // cout<<yrct<<"  " <<iguild <<"   "<<biomassLevel<<"  "<<exploitationLevelGuild(area,iguild)<<endl;
          } // guild loop
          // take the smallest of all recalculated levels. this will be the new level
+        #// THIS NEEDS TO CHANGE, NEED TO TARGET FLEET THAT FISH ON GUILD
           newExploitationLevel = min(exploitationLevelGuild(area));
         //  cout<<"nlevel = "<<newExploitationLevel<<endl;
 
