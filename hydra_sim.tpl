@@ -2152,7 +2152,7 @@ FUNCTION write_simout_KRAKEN
 //----------------------------------------------------------------------------------------
 
   //send simulated biomass and catch data to csv for use in production model (KRAKEN)
-      ofstream simout("simKrakent.csv"); // for Kraken
+      ofstream simout("simKraken.csv"); // for Kraken
       simout<<"rseed,"<<rseed<<endl;
       simout<<"BIOMASS"<<endl;
       for (area=1; area<=Nareas; area++){
