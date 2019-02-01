@@ -231,6 +231,7 @@ DATA_SECTION
   init_matrix recruitment_cov(1,Nrecruitment_cov,1,Nyrs)		//time series of recruitment covariates
   init_matrix maturity_cov(1,Nmaturity_cov,1,Nyrs)				//time series of maturity covariates
   init_matrix growth_cov(1,Ngrowth_cov,1,Nyrs)
+
    //time series of growth covariates
   //init_3darray recruitment_cov(1,Nareas,1,Nrecruitment_cov,1,Nyrs)  //time series of recruitment covariates, area specific
   //init_3darray maturity_cov(1,Nareas,1,Nmaturity_cov,1,Nyrs)  //time series of maturity covariates, area specific
@@ -240,7 +241,6 @@ DATA_SECTION
   init_3darray obs_survey_biomass(1,Nareas,1,Nspecies,1,Nyrs)  	//spring or fall? units needed
   init_3darray obs_catch_biomass(1,Nareas,1,Nspecies,1,Nyrs)  	//total catch in tons
   init_3darray obs_effort(1,Nareas,1,Nfleets,1,Nyrs)  	//standardized effort units needed
-
   //init_4darray for survey size comp by area, species, year?
   //init_5darray for catch at size by area, species, fleet, year?
 
@@ -251,7 +251,6 @@ DATA_SECTION
 
 //read in temperature time series from .dat file for intake calculation
   init_matrix obs_temp(1,Nareas,1,Nyrs)       //want variance measure? data source?
-
 //read in estimation phases from .dat file
   init_int yr1Nphase            //year 1 N at size estimation phase
   init_int recphase				//recruitment parameter estimation phase
@@ -301,7 +300,6 @@ DATA_SECTION
   init_matrix recSegmented_alpha(1,Nareas,1,Nspecies)			//SSB Segmented regression model alpha
   init_matrix recSegmented_shape(1,Nareas,1,Nspecies)			//SSB  Segmented regression model shape. use this for the breakpoint
   init_matrix recSegmented_beta(1,Nareas,1,Nspecies)			//SSB  Segmented regression model beta
-
   init_ivector rectype(1,Nspecies)  //switch for alternate recruitment functions
 
   init_ivector stochrec(1,Nspecies)  //switch for stochastic recruitment
@@ -1321,7 +1319,8 @@ FUNCTION calc_recruitment
            case 9:                   //Average recruitment plus devs--giving up on functional form
                        recruitment(area,spp)(yrct) = mfexp(avg_recruitment(area,spp)+recruitment_devs(area,spp,yrct));
 		  break;
-		  default:
+                  
+           default:
             exit(1);
 		} //end switch
 
@@ -2153,7 +2152,7 @@ FUNCTION write_simout_KRAKEN
 //----------------------------------------------------------------------------------------
 
   //send simulated biomass and catch data to csv for use in production model (KRAKEN)
-      ofstream simout("simout.csv"); // for Kraken
+      ofstream simout("simKrakent.csv"); // for Kraken
       simout<<"rseed,"<<rseed<<endl;
       simout<<"BIOMASS"<<endl;
       for (area=1; area<=Nareas; area++){
@@ -2249,7 +2248,7 @@ FUNCTION write_outDiagnostics
       part1Name << elapsedTime;
       fileNames << "_";
       fileNames << part1Name.str();
-      fileNames << "simtest.out";
+      fileNames << "simDiagnostics.out";
 
       std::string fileName = fileNames.str();
      
