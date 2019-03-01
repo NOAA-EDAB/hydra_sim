@@ -966,6 +966,11 @@ PROCEDURE_SECTION
       write_outIndices(); // MSE output
       exit(0);
     }
+   if (debug == 3 && flagMSE  == 2) // MSE darwin runs only. biomass and catch output only
+    {
+      write_outDarwin(); // MSE output
+      exit(0);
+    }
    if (debug == 3 && flagMSE == 0) // All diagnostic plots
     {
       write_simout_KRAKEN(); // kraken output
@@ -2175,6 +2180,31 @@ FUNCTION write_simout_KRAKEN
         }
       }
   
+
+//----------------------------------------------------------------------------------------
+FUNCTION write_outDarwin
+//----------------------------------------------------------------------------------------
+  //send simulated biomass and catch in MSE darwinian runs
+      clock_t elapsedTime2  = clock() - startTime;
+      std::stringstream fileIndicesNames,part2Name;
+      fileIndicesNames << rseed;
+      fileIndicesNames << time(&baseTime);
+      part2Name << elapsedTime2;
+      fileIndicesNames << "_";
+      fileIndicesNames << part2Name.str();
+      fileIndicesNames << "simDarwin.text";
+
+      std::string fileNameIndex = fileIndicesNames.str();
+     
+      ofstream outDarwin(fileNameIndex.c_str());
+
+      outDarwin<<"Nyrs\n"<<Nyrs<<endl;
+      outDarwin<<"avByr\n"<<avByr<<endl;
+      outDarwin<<"guildMembers\n"<<guildMembers<<endl;
+      outDarwin<<"est_catch_biomass\n"<<est_catch_biomass<<endl;
+      outDarwin<<"est_survey_biomass\n"<<est_survey_biomass<<endl;
+
+      outDarwin<<"manually exiting at end of procedure section....\n"<<endl;
 
 //----------------------------------------------------------------------------------------
 FUNCTION write_outIndices
