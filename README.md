@@ -1,4 +1,4 @@
-# MS_Hydra
+# mshydra
 Code development for MS model - Hydra
 
 - Code used in ICES publication "Combining stock, multispecies, and ecosystem level fishery objectives within an operational management procedure: simulation to start the conversation"
