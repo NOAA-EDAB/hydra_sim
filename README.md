@@ -1,5 +1,5 @@
-# mshydra
-Code development for MS model - Hydra
+# hydra_sim
+Code development for the hydra multispecies model
 
 - Code used in: Gaichas et al. (2017). Combining stock, multispecies, and ecosystem level fishery objectives within an operational management procedure: simulation to start the conversation. ICES 74:2, 552-565. doi: [10.1093/icesjms/fsw119](https://doi.org/10.1093/icesjms/fsw119)
 
