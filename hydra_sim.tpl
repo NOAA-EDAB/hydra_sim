@@ -55,6 +55,7 @@ GLOBALS_SECTION
   #include <fstream>
   #include <string>
   #include <sstream>
+  #include <cstdlib>
   time_t baseTime;
   clock_t startTime = clock();
 
@@ -863,7 +864,7 @@ PARAMETER_SECTION
   matrix exploitationLevelGuild(1,Nareas,1,Nguilds) // stores adjusted exploitation levels
   matrix objfun_areaspp(1,Nareas,1,Nspecies) //sum over components for area and species
   3darray rec_EventError(1,Nareas,1,Nspecies,1,Nyrs) // error for extreme recruitment event 
-
+  vector rrr(1,6)
 
   objective_function_value objfun
 
@@ -931,9 +932,9 @@ PROCEDURE_SECTION
 		calc_movement(); if (debug == 4) {cout<<"completed Movement"<<endl;}
 
                 calc_survey_abundance();  if (debug == 4) {cout<<"completed Survey Abundance"<<endl;}
-      
+
                 calc_health_indices();  if (debug == 4) {cout<<"completed Survey Abundance"<<endl;}
- 
+  
                 // enter assessment module if turned on in data file, if end of year, if curent year is a multiple of assessmentPeriod
                 if (AssessmentOn == 1) {
                  // if end of year and enough years have passed to perform assessment.
@@ -949,10 +950,9 @@ PROCEDURE_SECTION
                    }
                   }
                 }
-        
+   
 	 }
 
-  
   if (debug == 4) {cout<<"completed timestep loop"<<endl;}
 
   evaluate_the_objective_function(); if (debug == 4) {cout<<"completed Log Likelihood"<<endl;}
@@ -1737,6 +1737,7 @@ FUNCTION calc_health_indices
       index_Simpsons_N(iarea,yrct) = sum(prob_species)/pow(N_total,2);
       index_Simpsons_Nrecip(iarea,yrct) =1/index_Simpsons_N(iarea,yrct);
    }
+   
 // simpsons for Catch - summed over fleet
    for(int iarea=1;iarea<=Nareas;iarea++){
       prob_species.initialize();
@@ -1778,6 +1779,7 @@ FUNCTION calc_health_indices
           index_LFI_N(iarea,isp,yrct) = N_tot(iarea,isp,yrct,Nsizebins)/Nstepsyr; // number of large fish per year
        }
    }
+ 
 // 3. Predator to prey biomass ratio. (Pred = dogfish, skate, goosefish, cod, silverhake ) / (Prey = herring, mackerel,haddock, yellowtail, winter flounder)
 //      uses average annual biomass for each species (over all sizeclasses)
 // 4. planktivore : piscivore ratio
@@ -1813,12 +1815,13 @@ FUNCTION calc_health_indices
                    index_biomass(ic) = avByr(iarea,isp,iyear);
                   //test << iyear << "," << catch_data(ic)  << endl;
                 }
-                if (sum(index_catch) < 1e-6) {
+                // check to see if all elements are same abs(mean - geometric mean). if so std_dev() fails                   
+                if ((sum(index_catch) < 1e-6) || (abs(value(mean(index_catch) - exp(sum(log(index_catch))/bandwidth_metric))) < 1e-6 ) ) {
                    index_stdev_catch(iarea,isp,yrct) = 0;
                 } else {
                    index_stdev_catch(iarea,isp,yrct) = std_dev(index_catch);
                 }
-                if (sum(index_biomass) < 1e-6) {
+                if ((sum(index_biomass) < 1e-6) || (abs(value(mean(index_biomass) - exp(sum(log(index_biomass))/bandwidth_metric))) < 1e-6 ) ) {
                    index_stdev_biomass(iarea,isp,yrct) = 0;
                 } else {
                    index_stdev_biomass(iarea,isp,yrct) = std_dev(index_biomass);
@@ -1827,6 +1830,7 @@ FUNCTION calc_health_indices
             }
       }
    }
+         
 // 6. Exploitation Rate
       for (int iarea=1; iarea<=Nareas; iarea++){
          dvariable total_catch = 0.0;
@@ -2408,7 +2412,7 @@ TOP_OF_MAIN_SECTION
 //  gradient_structure::set_GRADSTACK_BUFFER_SIZE(3000000);
 
 // Try to prevent *.tmp files from being created since no derivatives are needed. Purely simulation
-  arrmblsize = 8000000;
+  arrmblsize = 80000000;
   gradient_structure::set_NO_DERIVATIVES();
 //  gradient_structure::set_CMPDIF_BUFFER_SIZE(12000000);
 //  gradient_structure::set_GRADSTACK_BUFFER_SIZE(6000000);
