@@ -55,7 +55,6 @@ GLOBALS_SECTION
   #include <fstream>
   #include <string>
   #include <sstream>
-  #include <cstdlib>
   time_t baseTime;
   clock_t startTime = clock();
 
@@ -864,7 +863,6 @@ PARAMETER_SECTION
   matrix exploitationLevelGuild(1,Nareas,1,Nguilds) // stores adjusted exploitation levels
   matrix objfun_areaspp(1,Nareas,1,Nspecies) //sum over components for area and species
   3darray rec_EventError(1,Nareas,1,Nspecies,1,Nyrs) // error for extreme recruitment event 
-  vector rrr(1,6)
 
   objective_function_value objfun
 
