@@ -2459,8 +2459,10 @@ FUNCTION write_outIndices
       outIndices<<"B0_guilds\n"<<B0_guilds<<endl;
       outIndices<<"guildMembers\n"<<guildMembers<<endl;
       outIndices<<"Nthresholds\n"<<Nthresholds<<endl;
-      outIndices<<"threshold_proportion\n"<<threshold_proportion<<endl;
-      outIndices<<"exploitation_levels\n"<<exploitation_levels<<endl;
+      outIndices<<"minExploitation\n"<<minExploitation<<endl;
+      outIndices<<"maxExploitation\n"<<maxExploitation<<endl;
+      //outIndices<<"threshold_proportion\n"<<threshold_proportion<<endl;
+      //outIndices<<"exploitation_levels\n"<<exploitation_levels<<endl;
       outIndices<<"threshold_species\n"<<threshold_species<<endl;
       outIndices<<"AssessmentPeriod\n"<<AssessmentPeriod<<endl;
       outIndices<<"SpeciesDetection\n"<<speciesDetection<<endl;
