@@ -581,6 +581,10 @@ DATA_SECTION
   3darray sim_extreme_recruit_error(1,Nareas,1,Nspecies,1,Nyrs) // used to calculate errors for extreme event
 
   init_int flagMSE //flag to determine output created. If MSE = 1, otherwise = 0
+  init_matrix residentTime(1,Nareas,1,Nspecies) // proportion of time each species spent in management area
+    // .10 1 .17 1 1 1 1 .14 1 1
+  init_matrix areaMortality(1,Nareas,1,Nspecies) // total mortality of pop outside management area
+  // 0 0 0 0 0 0 0 0 0 0  
  //flag marking end of file for data input
   init_int eof;
 
@@ -719,7 +723,9 @@ PARAMETER_SECTION
   4darray suitpreybio(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins);  //suitable prey for each predator size and year, see weight unit above for units
 
   //N, B, F, Z, M2, C, need total prey consumed per pred, suitability, available prey, food habits?
-  4darray N(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //numbers by area, species, size,  timestep , in millions
+  4darray N(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //numbers by area of total pop, species, size,  timestep , in millions
+  4darray Narea(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //numbers by area of pop in area, species, size,  timestep , in millions
+  4darray Nnotarea(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //numbers by area of pop outside, species, size,  timestep , in millions
   4darray B(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //biomass by area, species, size,  timestep , see weight unit above for units
   4darray F(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //fishing mort by area, species, size,  timestep
   4darray C(1,Nareas,1,Nspecies,1,Tottimesteps,1,Nsizebins) //catch numbers by area, species, size, timestep , in millions
@@ -909,15 +915,16 @@ PROCEDURE_SECTION
 
   for (t=2; t<=Tottimesteps; t++)
      {
-  //beet                // make N(t) =  N(t-1)
+
 		//if (debug == 3) {cout<<yrct<<" "<<t<<endl;}
-                // abeet
                 if (t % Nstepsyr == 1) {yrct++;} // first time step in new year = > increment year
 
                 calc_update_N(); // N(t) = N(t-1)
 
                   // add recruits at start of year.  update N to add recruits to bin 1
                 calc_recruitment(); if (debug == 4) {cout<<"completed Recruitment"<<endl;}
+
+                calc_available_N();
 
                 calc_pred_mortality(); if (debug == 4) {cout<<"completed Predation Mortality"<<endl;}
 
@@ -993,7 +1000,7 @@ FUNCTION calc_initial_states
   suitpreybio.initialize();
   Fyr.initialize();
   fishsel.initialize(); Ffl.initialize(); Cfl.initialize();
-  N.initialize(); B.initialize(); F.initialize(); C.initialize();
+  N.initialize(); B.initialize(); F.initialize(); C.initialize(); Narea.initialize();Nnotarea.initialize();
   Z.initialize(); M2.initialize(); eatN.initialize(); otherDead.initialize();discardN.initialize();
   avByr.initialize(); SSB.initialize();
   eaten_biomass.initialize();
@@ -1360,6 +1367,36 @@ FUNCTION calc_recruitment
   }  //end if last timestep in year
 
 
+
+//----------------------------------------------------------------------------------------
+FUNCTION calc_available_N
+//----------------------------------------------------------------------------------------
+// Since some of the species are only in certain management areas for a small percentage of the time
+// fishing and predation mortality should be applied to a smaller proportion of the stock.
+
+ 
+ // simply make Narea(t) = N(t)
+ for (area=1; area<=Nareas; area++){
+  	for(spp=1; spp<=Nspecies; spp++){
+            for(int isize=1; isize<=Nsizebins; isize++){
+               Narea(area,spp,t,isize) = N(area,spp,t,isize);
+            }
+         }
+  }
+  //adjust Narea based on proportion of population in management area
+  for (area=1; area<=Nareas; area++){
+     for(spp=1; spp<=Nspecies; spp++){
+         Narea(area,spp,t) = N(area,spp,t)*residentTime(area,spp);
+     }
+  }
+
+//     cout << N(1,8,t,3)<<"-"<<N(1,6,t,5)<<endl;
+//     cout << Narea(1,8,t,3)<<"-"<<Narea(1,6,t,5)<<endl;
+//     cout << "___________"<<endl;
+  
+
+
+
 //----------------------------------------------------------------------------------------
 FUNCTION calc_pred_mortality
 //----------------------------------------------------------------------------------------
@@ -1378,7 +1415,7 @@ FUNCTION calc_pred_mortality
 		  suittemp.rowshift(1); //needed to match up array bounds
                   // vector * matrix = vector. result = [ sum(v*mat[,1]),sum(v*mat[,2]),sum(v*mat[,3]),sum(v*mat[,4]),sum(v*mat[,5])]
                   // standard  matrix  multiplication
-	      suitpreybio(area,pred,t) += wtconv*(elem_prod(binavgwt(prey),N(area,prey,t)) *  suittemp);
+	      suitpreybio(area,pred,t) += wtconv*(elem_prod(binavgwt(prey),Narea(area,prey,t)) *  suittemp);
              }
         }
   } //ok
@@ -1395,7 +1432,7 @@ FUNCTION calc_pred_mortality
 		  suittemp2.rowshift(1); //needed to match up array bounds
                   for (int ipreysize =1; ipreysize<=Nsizebins; ipreysize++) {
                    for (int ipredsize =1; ipredsize<=Nsizebins; ipredsize++) {
-                     M2(area,prey,t,ipreysize) += (intake(area,pred,yrct,ipredsize)*N(area,pred,t,ipredsize) * suittemp2(ipreysize,ipredsize)) /
+                     M2(area,prey,t,ipreysize) += (intake(area,pred,yrct,ipredsize)*Narea(area,pred,t,ipredsize) * suittemp2(ipreysize,ipredsize)) /
                            (suitpreybio(area,pred,t,ipredsize) + otherFood);    //Hall et al 2006 other prey too high
                     }
                   }
@@ -1476,7 +1513,7 @@ FUNCTION calc_catch_etc
       dvar_vector M2prop = elem_div(M2(area,spp,t),Z(area,spp,t)); //prop of death due to predation of each size class
       dvar_vector M1prop = elem_div(M1(area,spp),Z(area,spp,t)); // prop of death due to other mortality. M1 read in from Data file
       dvar_vector Dprop = elem_div(D(area,spp,t),Z(area,spp,t)); // prop of death due to Discards of each size class
-      dvar_vector Ndeadtmp = elem_prod((1-exp(-Z(area,spp,t))),N(area,spp,t));// total number dead in each size class
+      dvar_vector Ndeadtmp = elem_prod((1-exp(-Z(area,spp,t))),Narea(area,spp,t));// total number dead in each size class
       // note: Z = total mortality
 
       //these are numbers at size dying each timestep from fishing, predation, and M1 (other)
@@ -1505,13 +1542,13 @@ FUNCTION calc_catch_etc
       eaten_biomass_size(area,spp,yrct) += wtconv*elem_prod(eatN(area,spp,t),binavgwt(spp));
       discard_biomass_size(area,spp,yrct) +=  wtconv*elem_prod(discardN(area,spp,t),binavgwt(spp));
       otherDead_biomass_size(area,spp,yrct) += wtconv*elem_prod(otherDead(area,spp,t),binavgwt(spp));
-      total_biomass_size(area,spp,yrct) += wtconv*elem_prod(N(area,spp,t),binavgwt(spp));
+      total_biomass_size(area,spp,yrct) += wtconv*elem_prod(Narea(area,spp,t),binavgwt(spp));
 
       //these are annual total biomass losses for comparison with production models
       eaten_biomass(area,spp,yrct) += sum(wtconv*elem_prod(eatN(area,spp,t),binavgwt(spp)));
       discard_biomass(area,spp,yrct) +=  sum(wtconv*elem_prod(discardN(area,spp,t),binavgwt(spp)));
       otherDead_biomass(area,spp,yrct) += sum(wtconv*elem_prod(otherDead(area,spp,t),binavgwt(spp)));
-      total_biomass(area,spp,yrct) += sum(wtconv*elem_prod(N(area,spp,t),binavgwt(spp)));
+      total_biomass(area,spp,yrct) += sum(wtconv*elem_prod(Narea(area,spp,t),binavgwt(spp)));
 
       //do fleet specific catch in numbers, biomass, sum for total catch
       for(fleet=1; fleet<=Nfleets; fleet++){
@@ -1586,6 +1623,20 @@ FUNCTION calc_catch_etc
 FUNCTION calc_pop_dynamics
 //----------------------------------------------------------------------------------------
 
+ // For species not resident in area.
+ // Assume contant total mortality rate for population not in management area.
+ // Adjust that proportion of population
+
+  for(area = 1; area <=Nareas; area++) {
+       for (spp = 1; spp <=Nspecies; spp++) {
+           for(int isize=1; isize <= Nsizebins; isize++){
+              // For pop outside of management area => entire population * proportion of population out of area * mortality rate
+              Nnotarea(area,spp,t,isize) = N(area,spp,t,isize)*(1.0-residentTime(area,spp))*(1.0-areaMortality(area,spp));
+           }
+       }
+  }
+
+  // POP DYNAMICS for Area of interest
   //for all older than recruits,
   //pop is composed of survivors from previous size growing into current size and staying in area
   //plus survivors in current size not growing out of current size and staying in area
@@ -1605,9 +1656,9 @@ FUNCTION calc_pop_dynamics
         // For all bins except smallest. execute from largest to smallest. Remember N(t) = N(t-1) in first step
         //N = surviving and growing from smaller bin and surviving and staying in current bin
         for(int isize=Nsizebins; isize>=2; isize--){
-       	 N(area,spp,t,isize) = N(area,spp,t,isize-1) * exp(-Z(area,spp,t,isize-1)) * growthprob_phi(area,spp,yrct,isize-1)
-                            +  N(area,spp,t,isize)* exp(-Z(area,spp,t,isize))  * (1-growthprob_phi(area,spp,yrct,isize));
-         N_tot(area,spp,yrct,isize) += N(area,spp,t,isize);// cumulate sum. averaged in indices
+       	 Narea(area,spp,t,isize) = Narea(area,spp,t,isize-1) * exp(-Z(area,spp,t,isize-1)) * growthprob_phi(area,spp,yrct,isize-1)
+                            +  Narea(area,spp,t,isize)* exp(-Z(area,spp,t,isize))  * (1-growthprob_phi(area,spp,yrct,isize));
+         N_tot(area,spp,yrct,isize) += Narea(area,spp,t,isize);// cumulate sum. averaged in indices
 
         }//end size loop
 
@@ -1615,14 +1666,20 @@ FUNCTION calc_pop_dynamics
         // smallest size class. Survivors that stay in same size class
         // we added recruits at start of year to current time. they were then fished in this time period
 //	N(area,spp,t,1) = N(area,spp,t-1,1)* exp(-Z(area,spp,t,1))*(1-growthprob_phi(area,spp,yrct,1));
-	N(area,spp,t,1) = N(area,spp,t,1)* exp(-Z(area,spp,t,1))*(1-growthprob_phi(area,spp,yrct,1));
+	Narea(area,spp,t,1) = Narea(area,spp,t,1)* exp(-Z(area,spp,t,1))*(1-growthprob_phi(area,spp,yrct,1));
 
-        N_tot(area,spp,yrct,1) += N(area,spp,t,1); // running total for the year. Used for indices
+        N_tot(area,spp,yrct,1) += Narea(area,spp,t,1); // running total for the year. Used for indices
 
       }//end species loop
 
   }//end area loop
 
+  // Add two populations (in management area, outside management area)
+   for(area = 1; area <=Nareas; area++) {
+       for (spp = 1; spp <=Nspecies; spp++) {
+           N(area,spp,t) = Nnotarea(area,spp,t) + Narea(area,spp,t);
+       }
+   }
 
        //  cout<<endl;
 
@@ -1657,7 +1714,7 @@ FUNCTION calc_movement
 			 // N(area,spp,t) -= N(area,spp,t) * probmoveout(area,spp);
    // ******************************************************************************
    // weight/length is not linear. The following line  will underestimate B
-      B(area,spp,t) = wtconv*elem_prod(N(area,spp,t),binavgwt(spp));  //do after movement
+      B(area,spp,t) = wtconv*elem_prod(Narea(area,spp,t),binavgwt(spp));  //do after movement
       for (int isize=1;isize<=Nsizebins;isize++) {
           // add up B over t for each year keeping size class structure. used in indices
           B_tot(area,spp,yrct,isize) += B(area,spp,t,isize);
