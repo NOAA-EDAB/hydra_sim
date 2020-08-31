@@ -2506,6 +2506,8 @@ FUNCTION write_outIndices
       outIndices<<"Nguilds\n"<<Nguilds<<endl;
       outIndices<<"Nfleets\n"<<Nfleets<<endl;
       outIndices<<"avByr\n"<<avByr<<endl;
+      outIndices<<"catch_biomass\n"<<catch_biomass<<endl;
+      outIndices<<"obs_effort\n"<<obs_effort<<endl;
       outIndices<<"est_fleet_catch_biomass\n"<<est_fleet_catch_biomass<<endl;
       outIndices<<"est_fleet_catch_guild_biomass\n"<<est_fleet_catch_guild_biomass<<endl;
       outIndices<<"est_catch_guild_biomass\n"<<est_catch_guild_biomass<<endl;
