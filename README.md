@@ -8,4 +8,20 @@ testing of simpler (non-size structured) multispecies assessment models and mana
 
 For more information please visit the [wiki](https://github.com/NOAA-EDAB/hydra_sim/wiki). Assumptions made in the model are detailed there.
 
+## Usage
+
+* Clone the repo as an R project
+* Move the *.tpl file to its own folder and compile it
+* source the run_model.r file
+
+```r
+run_model(pathToTPL = "full path to where you compiled the model",rootFolder="name of folder to store model output")
+```
+
+## Results
+
+The model runs 100 times. The output files (*.out and *.txt) are temporarily stored in the projects root folder. Once all runs have completed they will be moved to the `rootFolder` that you specified in the `run_model`call. These files will then be processed and a suite of plots will be made. They will be saved in the "diagnostics" folder  
+
+
+
 *This repository is a scientific product and is not official communication of the National Oceanic and Atmospheric Administration, or the United States Department of Commerce. All NOAA GitHub project code is provided on an ‘as is’ basis and the user assumes responsibility for its use. Any claims against the Department of Commerce or Department of Commerce bureaus stemming from the use of this GitHub project will be governed by all applicable Federal law. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by the Department of Commerce. The Department of Commerce seal and logo, or the seal and logo of a DOC bureau, shall not be used in any manner to imply endorsement of any commercial product or activity by DOC or the United States Government.*
