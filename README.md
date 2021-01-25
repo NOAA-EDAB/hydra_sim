@@ -12,7 +12,8 @@ For more information please visit the [wiki](https://github.com/NOAA-EDAB/hydra_
 
 * Clone the repo as an R project
 * Move the *.tpl file to its own folder and compile it
-* source the run_model.r file
+* Source the `run_model.r` file
+* Run the `run_model.r` file
 
 ```r
 run_model(pathToTPL = "full path to where you compiled the model",rootFolder="name of folder to store model output")
