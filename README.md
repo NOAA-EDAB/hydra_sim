@@ -19,6 +19,10 @@ For more information please visit the [wiki](https://github.com/NOAA-EDAB/hydra_
 run_model(pathToTPL = "full path to where you compiled the model",rootFolder="name of folder to store model output")
 ```
 
+A sample set of parameter files `hydra_sim.dat` and `hydra_sim.pin` are included and should remain in the projects root after cloning. They will be copies to the `rootFolder`.
+The parameterizarion reflects what is termed a "historic" run where (somewhat) realistic fishing effort is used to drive the model.
+
+
 ## Results
 
 The model runs 100 times. The output files (*.out and *.txt) are temporarily stored in the projects root folder. Once all runs have completed they will be moved to the `rootFolder` that you specified in the `run_model`call. These files will then be processed and a suite of plots will be made. They will be saved in the "diagnostics" folder  
