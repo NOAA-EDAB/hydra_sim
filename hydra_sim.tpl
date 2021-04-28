@@ -2465,6 +2465,7 @@ FUNCTION write_outDarwin
       outDarwin<<"guildMembers\n"<<guildMembers<<endl;
       outDarwin<<"est_catch_biomass\n"<<est_catch_biomass<<endl;
       outDarwin<<"est_survey_biomass\n"<<est_survey_biomass<<endl;
+      outDarwin<<"N\n"<<N<<endl;
 
       outDarwin<<"manually exiting at end of procedure section....\n"<<endl;
 
