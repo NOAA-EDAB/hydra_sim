@@ -1,6 +1,6 @@
 # hydra_sim
 
-![gitleaks](https://github.com/NOAA-EDAB/LeMANS/workflows/gitleaks/badge.svg)
+![gitleaks](https://github.com/NOAA-EDAB/hydra_sim/workflows/gitleaks/badge.svg)
 
 
 Code development for the hydra multispecies model
