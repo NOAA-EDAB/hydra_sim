@@ -16,14 +16,20 @@ For more information please visit the [wiki](https://github.com/NOAA-EDAB/hydra_
 
 * Clone the repo as an R project
 * Move the *.tpl file to its own folder and compile it
+* Install dependencies (`remotes::install_deps(".")`)
 * Source the `run_model.r` file
 * Run the `run_model.r` file
 
 ```r
 run_model(pathToTPL = "full path to where you compiled the model",rootFolder="name of folder to store model output")
 ```
+For example, if you move the tpl file into a folder called `ADMB` and want output saved into a folder called `out`
 
-A sample set of parameter files `hydra_sim.dat` and `hydra_sim.pin` are included and should remain in the projects root after cloning. They will be copies to the `rootFolder`.
+```r
+run_model(pathToTPL = here::here("ADMB"), rootFolder = "out")
+```
+
+A sample set of parameter files `hydra_sim.dat` and `hydra_sim.pin` are included and should remain in the projects root after cloning. They will be copied to the `rootFolder`.
 The parameterizarion reflects what is termed a "historic" run where (somewhat) realistic fishing effort is used to drive the model.
 
 

@@ -1,0 +1,16 @@
+Package: hydra_sim
+Title: runs hydra multispecies model
+Version: 0.0.0.9000
+Authors@R: 
+    person("Andy", "Beet", , "andrew.beet@noaa.gov", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: runs hydra multispecies model and creates plots of output
+License: file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    here,
+    hydramse
+Remotes:
+  andybeet/hydramse
