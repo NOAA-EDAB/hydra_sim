@@ -49,12 +49,12 @@ A Dockerfile is provided to run Hydra inside a container.
   `docker build -t hydra .`
 
 * Create a directory in which to write model output, for example `output`
-* Copy `hydra_sim.dat`,`hydra_sim.pin`, `runModel.sh` to this folder
+* Copy `hydra_sim.dat`,`hydra_sim.pin` to this folder
 * Run Hydra 
 
   `docker run --rm --mount "type=bind,src=/path_to_output_folder/,dst=/HYDRA/mount" hydra`
 
-The output from the model should appear in the `output` folder. Running Hydra in this manner uses a random number seed of 1. Preferred method 
+The output from the model should appear in the `output` folder. Running Hydra in this manner uses a random number seed of 1, always. This is a good first step to ensure your image built correctly. The preferred method to run Hydra is to pass a value of the seed as an argument to the docker run command: 
 
 * `docker run --rm --mount "type=bind,src=/path_to_output_folder/,dst=/HYDRA/mount" hydra hydra_sim.dat hydra_sim.pin 88`
 
