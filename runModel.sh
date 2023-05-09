@@ -1,4 +1,9 @@
 #!/bin/bash
-chmod -R 777 /HYDRA/mount
+#chmod -R 777 /HYDRA/mount
 find /HYDRA/mount -type f | xargs dos2unix
-/HYDRA/hydra_sim -ind /HYDRA/mount/hydra_sim.dat -ainp /HYDRA/mount/hydra_sim.pin
+
+arg1=${1}
+arg2=${2}
+arg3=${3}
+
+/HYDRA/hydra_sim -ind /HYDRA/mount/$arg1 -ainp /HYDRA/mount/$arg2 -sim $arg3
