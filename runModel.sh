@@ -1,6 +1,4 @@
 #!/bin/bash
-#chmod -R 777 /HYDRA/mount
-find /HYDRA/mount -type f | xargs dos2unix
 
 arg1=${1}
 arg2=${2}
