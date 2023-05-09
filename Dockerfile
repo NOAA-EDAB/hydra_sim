@@ -20,14 +20,11 @@ RUN chmod -R 777 /HYDRA
 # compile the model
 RUN /ADMBcode/admb-12.2/admb hydra_sim.tpl
 
-# create a directory in which all output will be created.
-This will be the dst directory for mounted files  
 RUN mkdir /HYDRA/mount
 RUN mv /HYDRA/hydra_sim.dat /HYDRA/mount/hydra_sim.dat
 RUN mv /HYDRA/hydra_sim.pin /HYDRA/mount/hydra_sim.pin
-RUN mv /HYDRA/runModel.sh /HYDRA/mount/runModel.sh
 
 WORKDIR /HYDRA/mount
 
-ENTRYPOINT ["sh"]
-CMD ["runModel.sh"]
+ENTRYPOINT ["sh","/HYDRA/runModel.sh"]
+CMD ["hydra_sim.dat","hydra_sim.pin","1"]
