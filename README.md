@@ -1,7 +1,6 @@
 # hydra_sim
 
-![gitleaks](https://github.com/NOAA-EDAB/hydra_sim/workflows/gitleaks/badge.svg)
-
+[![gitleaks](https://github.com/NOAA-EDAB/hydra_sim/actions/workflows/secretScan.yml/badge.svg)](https://github.com/NOAA-EDAB/hydra_sim/actions/workflows/secretScan.yml)
 
 Code development for the hydra multispecies model
 
@@ -13,6 +12,10 @@ testing of simpler (non-size structured) multispecies assessment models and mana
 For more information please visit the [wiki](https://github.com/NOAA-EDAB/hydra_sim/wiki). Assumptions made in the model are detailed there.
 
 ## Usage
+
+The Hydra model is coded in Automatic Differentiation Model Builder (ADMB). You will either need to install ADMB locally or use Docker/podman and install ADMB inside the container. A Dockerfile is provided to achieve this.
+
+### On PC
 
 * Clone the repo as an R project
 * Move the *.tpl file to its own folder and compile it
@@ -32,10 +35,32 @@ run_model(pathToTPL = here::here("ADMB"), rootFolder = "out")
 A sample set of parameter files `hydra_sim.dat` and `hydra_sim.pin` are included and should remain in the projects root after cloning. They will be copied to the `rootFolder`.
 The parameterizarion reflects what is termed a "historic" run where (somewhat) realistic fishing effort is used to drive the model.
 
-
 ## Results
 
-The model runs 100 times. The output files (*.out and *.txt) are temporarily stored in the projects root folder. Once all runs have completed they will be moved to the `rootFolder` that you specified in the `run_model`call. These files will then be processed and a suite of plots will be made. They will be saved in the "diagnostics" folder  
+The model runs 100 times. The output files (*.out and *.txt) are temporarily stored in the projects root folder. Once all runs have completed they will be moved to the `rootFolder` that you specified in the `run_model`call. These files will then be processed and a suite of plots will be made. They will be saved in the "diagnostics" folder 
+
+### Container
+
+A Dockerfile is provided to run Hydra inside a container.
+
+* Clone the repo
+* Build the Docker image (here it is named `hydra`)
+
+  `docker build -t hydra .`
+
+* Create a directory in which to write model output, for example `output`
+* Copy `hydra_sim.dat`,`hydra_sim.pin`, `runModel.sh` to this folder
+* Run Hydra 
+
+  `docker run --rm --mount "type=bind,src=/path_to_output_folder/,dst=/HYDRA/mount" hydra`
+
+The output from the model should appear in the `output` folder. Running Hydra in this manner uses a random number seed of 1. Preferred method 
+
+* `docker run --rm --mount "type=bind,src=/path_to_output_folder/,dst=/HYDRA/mount" hydra hydra_sim.dat hydra_sim.pin 88`
+
+This runs Hydra using dat and pin files with specified names (these must reside in the `path_to_output_folder`) and a seed of 88
+
+* Process output
 
 ## Contact
 
