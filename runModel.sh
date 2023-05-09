@@ -1,2 +1,2 @@
 #!/bin/bash
-./hydra_sim -ind hydra_sim.dat -ainp hydra_sim.pin
+./hydra_sim -ind /mount/hydra_sim.dat -ainp /mount/hydra_sim.pin
