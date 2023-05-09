@@ -1,2 +1,3 @@
 #!/bin/bash
-./hydra_sim -ind /mount/hydra_sim.dat -ainp /mount/hydra_sim.pin
+find /HYDRA/mount -type f | xargs dos2unix
+./hydra_sim -ind /HYDRA/mount/hydra_sim.dat -ainp /HYDRA/mount/hydra_sim.pin
